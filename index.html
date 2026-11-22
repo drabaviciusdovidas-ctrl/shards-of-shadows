@@ -96,10 +96,17 @@
   const dot = document.getElementById('dot'), st = document.getElementById('st'), hub = document.getElementById('hubLink');
   const off = (t) => { dot.className = 'dot off'; st.textContent = t; };
   let cfg;
+  // сначала API GitHub (без кэша CDN), если лимит исчерпан — raw-файл
   try {
-    const r = await fetch('https://raw.githubusercontent.com/drabaviciusdovidas-ctrl/shards-of-shadows/main/connect.json?t=' + Date.now(), {cache: 'no-store'});
+    const r = await fetch('https://api.github.com/repos/drabaviciusdovidas-ctrl/shards-of-shadows/contents/connect.json', {headers: {Accept: 'application/vnd.github.raw+json'}, cache: 'no-store'});
+    if (!r.ok) throw new Error(r.status);
     cfg = await r.json();
-  } catch (e) { off('Статус недоступен'); return; }
+  } catch (e) {
+    try {
+      const r = await fetch('https://raw.githubusercontent.com/drabaviciusdovidas-ctrl/shards-of-shadows/main/connect.json?t=' + Date.now(), {cache: 'no-store'});
+      cfg = await r.json();
+    } catch (e2) { off('Статус недоступен'); return; }
+  }
   if (cfg && cfg.hub) { hub.href = cfg.hub; hub.removeAttribute('aria-disabled'); }
   try {
     const ctl = new AbortController(); setTimeout(() => ctl.abort(), 6000);
